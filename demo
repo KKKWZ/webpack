@@ -1,0 +1,109 @@
+$ npm init -y
+$ npm install jquery --save
+$ npm install webpack --save-dev
+
+//index.js
+var $ = require('jquery');
+$('body').html('Hello');
+
+
+//在webpac.config.js文件中创建Webpack配置。Webpack配置就是Javascript，需要导入一个对象。
+module.exports = {
+    entry: './src',
+    output: {
+        path: 'builds',
+        filename: 'bundle.js',
+    },
+};
+
+
+
+//entry 告诉webpack在应用中哪些文件是入口文件。这些就是最主要的文件，位于依赖树的最上层。
+//然后我们告诉它编译的打包文件放到builds文件夹下并且命名为bundle.js。设置相应的index.html页面：
+<!DOCTYPE html>
+<html>
+ <head></head>
+ <body> 
+  <h1>My title</h1> 
+  <a>Click me</a> 
+  <script src="builds/bundle.js"></script>  
+ </body>
+</html>
+
+
+//Babel安装配置完成后，用ES6语法重写 index.js 文件。
+import $ from 'jquery';
+$('body').html('Hello');
+
+
+//首先我们需要安装Mustache，它是一个非常轻量级的模板包，但是我们也需要用来加载Sass和HTML的loaders。
+//结果是从一个加载器传送到另外一个加载器，我们需要一个CSS加载器来处理Sass 加载器处理的结果。
+//现在，一旦我们有了CSS就有很多方式去处理他们了，目前为止我们将会使用称作 style-loader 的 加载器来处理CSS,  style-loader 将CSS动态的注入到页面。
+$ npm install mustache --save
+$ npm install css-loader style-loader html-loader sass-loader node-sass --save-dev
+
+给loaders  属性配置一个array值来替代 loader 属性配置：
+
+{
+    test: /\.js/,
+    loader: 'babel',
+    include: /src/,
+},
+{
+    test: /\.scss/,
+    //loader: 'style!css!sass',
+    // Or
+    loaders: ['style', 'css', 'sass'],
+},
+{
+    test: /\.html/,
+    loader: 'html',
+}
+
+
+
+//button组件：
+ 
+//src/Components/Button.scss
+.button{                                                                                                                                                  background:tomato;                                                                                                                                    color:white;                                                                                                                                      }    
+
+//src/Components/Button.html
+<a class="button"href="{{link}}">{{text}}</a>
+
+//src/Components/Button.js
+ 
+import $ from 'jquery';
+import template from './Button.html';
+import Mustache from 'mustache';
+import './Button.scss';
+ 
+export default class Button {
+        constructor(link) {
+            this.link = link;
+        }
+ 
+        onClick(event) {
+            event.preventDefault();
+            alert(this.link);
+        }
+ 
+        render(node) {
+            const text = $(node).text();
+ 
+            // Render our button
+            $(node).html(Mustache.render(template, {
+                text
+            }));
+ 
+            // Attach our listeners
+            $('.button').click(this.onClick.bind(this));
+        }
+    }
+
+//现在 Button.js是百分百自包含的，无论何时被导入，在哪种上下文环境中，它都是可以运行的，它是可以被正确使用和渲染的。
+//将Button渲染在页面：
+//src/index.js
+import Button from './Components/Button';
+const button = new Button('google.com');
+button.render('a'); 
+//运行webpack，然后刷行页面，就可以点击按钮了。
